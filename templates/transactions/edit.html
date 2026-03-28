@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+{% block title %}Edit Transaksi - {{ config.APP_NAME }}{% endblock %}
+{% block page_title %}✏️ Edit Transaksi{% endblock %}
+{% block subtitle %}<p class="muted">Perbarui detail transaksi tanpa kehilangan jejak.</p>{% endblock %}
+{% block content %}
+<section class="card narrow-card">
+  <div class="section-head">
+    <div>
+      <div class="eyebrow">🛠️ Perbaikan cepat</div>
+      <h2>Ubah transaksi</h2>
+    </div>
+    <span class="soft-pill">ID #{{ row.id }}</span>
+  </div>
+  <form method="post" class="stack-form">
+    <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+    <label>Nominal
+      <input type="text" name="amount" value="{{ row.amount }}" required>
+    </label>
+    <label>Deskripsi
+      <input type="text" name="description" value="{{ row.description }}" required>
+    </label>
+    <label>Kategori
+      <input type="text" name="category" value="{{ row.category or '' }}">
+    </label>
+    <div class="btn-row">
+      <button type="submit" class="btn btn-primary">Simpan perubahan ✅</button>
+      <a href="{{ url_for('main.transactions') }}" class="btn btn-ghost">Batal</a>
+    </div>
+  </form>
+</section>
+{% endblock %}

@@ -1,0 +1,120 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard - {{ config.APP_NAME }}{% endblock %}
+{% block page_title %}📊 Dashboard{% endblock %}
+{% block subtitle %}<p class="muted">Ringkasan saldo, ritme transaksi, dan jejak pesan terbaru dalam satu layar.</p>{% endblock %}
+{% block content %}
+<section class="hero-panel">
+  <div>
+    <div class="eyebrow">👋 Halo, {{ g.user.phone }}</div>
+    <h2>Pantau arus kas harian tanpa buka spreadsheet dulu.</h2>
+    <p class="muted">Dari saldo total sampai percakapan bot terakhir, semuanya sudah dipadatkan biar cepat dibaca.</p>
+    {% if whatsapp_chat_url %}
+    <div class="btn-row mt16">
+      <a class="btn btn-primary" href="{{ whatsapp_chat_url }}" target="_blank" rel="noopener">💬 Catat via WhatsApp</a>
+    </div>
+    {% endif %}
+  </div>
+  <div class="hero-badges">
+    <span class="soft-pill">⚖️ Saldo real-time</span>
+    <span class="soft-pill">📆 Rekap 7 & 30 hari</span>
+    <span class="soft-pill">💬 WhatsApp log</span>
+  </div>
+</section>
+
+<div class="grid-cards four">
+  <section class="card metric-card card-balance">
+    <div class="metric-head">
+      <span class="metric-emoji">💼</span>
+      <div class="card-label">Saldo total</div>
+    </div>
+    <div class="metric">{{ format_rupiah(balance) }}</div>
+    <div class="muted">Plan aktif: {{ g.user.plan }}</div>
+  </section>
+  <section class="card metric-card">
+    <div class="metric-head">
+      <span class="metric-emoji">🌤️</span>
+      <div class="card-label">Hari ini</div>
+    </div>
+    <div class="stat-line"><span>Masuk</span><strong>{{ format_rupiah(today.income) }}</strong></div>
+    <div class="stat-line"><span>Keluar</span><strong>{{ format_rupiah(today.expense) }}</strong></div>
+    <div class="stat-line"><span>Net</span><strong>{{ format_rupiah(today.net) }}</strong></div>
+  </section>
+  <section class="card metric-card">
+    <div class="metric-head">
+      <span class="metric-emoji">🗓️</span>
+      <div class="card-label">7 hari</div>
+    </div>
+    <div class="stat-line"><span>Masuk</span><strong>{{ format_rupiah(week.income) }}</strong></div>
+    <div class="stat-line"><span>Keluar</span><strong>{{ format_rupiah(week.expense) }}</strong></div>
+    <div class="stat-line"><span>Net</span><strong>{{ format_rupiah(week.net) }}</strong></div>
+  </section>
+  <section class="card metric-card">
+    <div class="metric-head">
+      <span class="metric-emoji">🚀</span>
+      <div class="card-label">30 hari</div>
+    </div>
+    <div class="stat-line"><span>Masuk</span><strong>{{ format_rupiah(month.income) }}</strong></div>
+    <div class="stat-line"><span>Keluar</span><strong>{{ format_rupiah(month.expense) }}</strong></div>
+    <div class="stat-line"><span>Net</span><strong>{{ format_rupiah(month.net) }}</strong></div>
+  </section>
+</div>
+
+<div class="grid-two">
+  <section class="card">
+    <div class="section-head">
+      <div>
+        <div class="eyebrow">💸 Aktivitas terbaru</div>
+        <h2>Transaksi terakhir</h2>
+      </div>
+      <a class="link-btn" href="{{ url_for('main.transactions') }}">Lihat semua</a>
+    </div>
+    {% if recent_transactions %}
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Tanggal</th><th>Deskripsi</th><th>Nominal</th></tr>
+          </thead>
+          <tbody>
+            {% for row in recent_transactions %}
+              <tr>
+                <td>{{ format_datetime(row.transaction_at) }}</td>
+                <td>{{ row.description }}</td>
+                <td class="{{ 'income' if row.amount >= 0 else 'expense' }}">{{ format_rupiah(row.amount) }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div class="empty-state">🫙 Belum ada transaksi yang masuk.</div>
+    {% endif %}
+  </section>
+
+  <section class="card">
+    <div class="section-head">
+      <div>
+        <div class="eyebrow">💬 Rekaman bot</div>
+        <h2>Log WhatsApp terbaru</h2>
+      </div>
+      {% if config.ENABLE_SIMULATOR %}
+        <a class="link-btn" href="{{ url_for('whatsapp.simulator') }}">Buka simulator</a>
+      {% endif %}
+    </div>
+    {% if recent_messages %}
+      <div class="message-list">
+        {% for msg in recent_messages %}
+          <div class="message-item {{ msg.direction }}">
+            <div class="message-meta">
+              <span>{{ '📥 inbound' if msg.direction == 'inbound' else '📤 outbound' }}</span>
+              <span>{{ format_datetime(msg.created_at) }}</span>
+            </div>
+            <div class="message-body">{{ msg.body }}</div>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="empty-state">📭 Belum ada log pesan.</div>
+    {% endif %}
+  </section>
+</div>
+{% endblock %}

@@ -1,0 +1,15 @@
+ * Serving Flask app 'app'
+ * Debug mode: off
+2026-03-28 10:36:43,223 INFO werkzeug [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://192.168.100.100:5000
+2026-03-28 10:36:43,223 INFO werkzeug [33mPress CTRL+C to quit[0m
+2026-03-28 10:36:56,491 INFO app.security GET /login status=200 duration_ms=7.00 request_id=50012d4dddc6bd71 remote_addr=127.0.0.1
+2026-03-28 10:36:56,494 INFO werkzeug 127.0.0.1 - - [28/Mar/2026 10:36:56] "GET /login HTTP/1.1" 200 -
+2026-03-28 10:37:11,417 INFO app.security GET /login status=200 duration_ms=0.24 request_id=07afc5fc4fa2f3c6 remote_addr=127.0.0.1
+2026-03-28 10:37:11,417 INFO werkzeug 127.0.0.1 - - [28/Mar/2026 10:37:11] "GET /login HTTP/1.1" 200 -
+2026-03-28 10:37:11,470 INFO app.security GET /static/style.css status=200 duration_ms=24.13 request_id=77517fbe36b86ff4 remote_addr=127.0.0.1
+2026-03-28 10:37:11,471 INFO werkzeug 127.0.0.1 - - [28/Mar/2026 10:37:11] "GET /static/style.css HTTP/1.1" 200 -
+2026-03-28 10:37:12,053 INFO app.security GET /favicon.ico status=404 duration_ms=0.27 request_id=578cdd1348078e42 remote_addr=127.0.0.1
+2026-03-28 10:37:12,054 INFO werkzeug 127.0.0.1 - - [28/Mar/2026 10:37:12] "[33mGET /favicon.ico HTTP/1.1[0m" 404 -

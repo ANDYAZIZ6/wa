@@ -1,0 +1,7 @@
+Flask>=3.0,<3.1
+python-dotenv>=1.0,<2.0
+SQLAlchemy>=2.0,<2.1
+pg8000>=1.31,<2.0
+twilio>=9.0,<10.0
+gunicorn>=22.0,<23.0
+tzdata>=2025.1

@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+{% block title %}Syarat & Ketentuan - {{ config.APP_NAME }}{% endblock %}
+{% block page_title %}📋 Syarat & Ketentuan{% endblock %}
+{% block subtitle %}<p class="muted">Ringkasan aturan penggunaan layanan pencatatan keuangan via WhatsApp.</p>{% endblock %}
+{% block content %}
+<section class="card narrow-card">
+  <div class="section-head">
+    <div>
+      <div class="eyebrow">🧾 Penggunaan layanan</div>
+      <h2>Aturan dasar</h2>
+    </div>
+  </div>
+  <div class="profile-box">
+    <div>
+      <strong>1. Akun berbasis nomor WhatsApp</strong>
+      <p class="muted">Nomor WhatsApp yang mengirim pesan pertama akan dipakai sebagai identitas akun.</p>
+    </div>
+    <div>
+      <strong>2. Keamanan akun</strong>
+      <p class="muted">Pengguna wajib mengganti password bawaan setelah login pertama dan menjaga kerahasiaannya.</p>
+    </div>
+    <div>
+      <strong>3. Keakuratan data</strong>
+      <p class="muted">Sistem membantu pencatatan, tetapi pengguna tetap bertanggung jawab memeriksa hasil catatan dan laporan.</p>
+    </div>
+    <div>
+      <strong>4. Penggunaan wajar</strong>
+      <p class="muted">Layanan tidak boleh dipakai untuk spam, penyalahgunaan webhook, atau aktivitas yang melanggar hukum.</p>
+    </div>
+  </div>
+</section>
+{% endblock %}

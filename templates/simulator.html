@@ -1,0 +1,91 @@
+{% extends 'base.html' %}
+{% block title %}Simulator WA - {{ config.APP_NAME }}{% endblock %}
+{% block page_title %}🧪 Simulator WhatsApp{% endblock %}
+{% block subtitle %}<p class="muted">Ruang uji untuk development: cek onboarding, parsing transaksi, dan balasan bot tanpa provider asli.</p>{% endblock %}
+{% block content %}
+<section class="hero-panel compact">
+  <div>
+    <div class="eyebrow">⚠️ Development only</div>
+    <h2>Gunakan simulator ini untuk ngetes flow pesan sebelum dihubungkan ke provider.</h2>
+  </div>
+  <div class="hero-badges">
+    <span class="soft-pill">📨 inbound fake</span>
+    <span class="soft-pill">🤖 bot reply</span>
+    <span class="soft-pill">🧾 parsing check</span>
+  </div>
+</section>
+
+<div class="grid-two top-align">
+  <section class="card">
+    <div class="section-head">
+      <div>
+        <div class="eyebrow">📬 Kirim payload</div>
+        <h2>Pesan uji</h2>
+      </div>
+      <span class="soft-pill">local webhook</span>
+    </div>
+    <form method="post" class="stack-form">
+      <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+      <label>Nomor pengirim
+        <input type="text" name="phone" value="{{ g.user.phone }}" required>
+      </label>
+      <label>Message ID (opsional)
+        <input type="text" name="message_id" placeholder="kosongkan agar auto-generate">
+      </label>
+      <label>Isi pesan
+        <textarea name="text" rows="10" placeholder="Contoh:
+halo
+10k kopi
++2jt freelance
+saldo" required></textarea>
+      </label>
+      <button type="submit" class="btn btn-primary">Kirim ke webhook lokal 🚀</button>
+    </form>
+  </section>
+
+  <section class="card">
+    <div class="section-head">
+      <div>
+        <div class="eyebrow">🗂️ Cheat sheet</div>
+        <h2>Contoh perintah</h2>
+      </div>
+      <span class="soft-pill">quick copy</span>
+    </div>
+    <ul class="demo-list">
+      <li><code>halo</code> -> buat akun kalau nomor belum ada</li>
+      <li><code>saldo awal 500k</code> -> set saldo awal</li>
+      <li><code>10k jajan kopi</code> -> catat pengeluaran</li>
+      <li><code>+3jt freelance</code> -> catat pemasukan</li>
+      <li><code>saldo</code> -> cek saldo</li>
+      <li><code>rekap</code>, <code>mingguan</code>, <code>bulanan</code></li>
+      <li><code>lupa password</code> -> buat link reset password baru</li>
+      <li><code>reset saldo</code> -> hapus semua transaksi</li>
+    </ul>
+  </section>
+</div>
+
+{% if response_data %}
+<section class="card mt16">
+  <div class="section-head">
+    <div>
+      <div class="eyebrow">🪄 Hasil simulasi</div>
+      <h2>Response webhook</h2>
+    </div>
+  </div>
+  <div class="result-block">
+    <div><span class="small-label">Payload</span><pre>{{ response_data.payload | tojson(indent=2) }}</pre></div>
+    <div><span class="small-label">Reply</span><pre>{{ response_data.reply_text }}</pre></div>
+    <div class="result-meta">
+      <span class="badge">created_user={{ response_data.created_user }}</span>
+      <span class="badge">duplicate={{ response_data.duplicate }}</span>
+      {% if response_data.temporary_password %}
+      <span class="badge">temporary_password={{ response_data.temporary_password }}</span>
+      {% endif %}
+      {% if response_data.setup_url %}
+      <span class="badge">setup_url={{ response_data.setup_url }}</span>
+      {% endif %}
+    </div>
+  </div>
+</section>
+{% endif %}
+{% endblock %}

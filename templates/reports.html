@@ -1,0 +1,138 @@
+{% extends 'base.html' %}
+{% block title %}Laporan - {{ config.APP_NAME }}{% endblock %}
+{% block page_title %}📈 Laporan{% endblock %}
+{% block subtitle %}<p class="muted">Baca pola pemasukan dan pengeluaran tanpa perlu olah manual.</p>{% endblock %}
+{% block content %}
+<section class="card">
+  <div class="section-head">
+    <div>
+      <div class="eyebrow">🧮 Rentang analisis</div>
+      <h2>Filter laporan</h2>
+    </div>
+    <span class="soft-pill">CSV ready</span>
+  </div>
+  <form method="get" class="filter-grid">
+    <label>Dari tanggal
+      <input type="date" name="start" value="{{ filters.start }}">
+    </label>
+    <label>Sampai tanggal
+      <input type="date" name="end" value="{{ filters.end }}">
+    </label>
+    <label>Jenis
+      <select name="type">
+        <option value="">Semua</option>
+        <option value="income" {% if filters.type == 'income' %}selected{% endif %}>Income</option>
+        <option value="expense" {% if filters.type == 'expense' %}selected{% endif %}>Expense</option>
+      </select>
+    </label>
+    <label>Per halaman
+      <select name="per_page">
+        {% for size in [10, 25, 50, 100] %}
+          <option value="{{ size }}" {% if filters.per_page == size %}selected{% endif %}>{{ size }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <div class="btn-row align-end">
+      <button type="submit" class="btn">Terapkan</button>
+      <a href="{{ url_for('main.reports') }}" class="btn btn-ghost">Reset</a>
+      <a href="{{ url_for('main.export_csv', start=filters.start, end=filters.end, type=filters.type) }}" class="btn btn-primary">Export CSV ⬇️</a>
+    </div>
+  </form>
+</section>
+
+<div class="grid-cards three mt16">
+  <section class="card metric-card accent-income">
+    <div class="metric-head">
+      <span class="metric-emoji">🟢</span>
+      <div class="card-label">Total masuk</div>
+    </div>
+    <div class="metric income">{{ format_rupiah(summary.income) }}</div>
+  </section>
+  <section class="card metric-card accent-expense">
+    <div class="metric-head">
+      <span class="metric-emoji">🔴</span>
+      <div class="card-label">Total keluar</div>
+    </div>
+    <div class="metric expense">{{ format_rupiah(-summary.expense) }}</div>
+  </section>
+  <section class="card metric-card">
+    <div class="metric-head">
+      <span class="metric-emoji">⚡</span>
+      <div class="card-label">Net</div>
+    </div>
+    <div class="metric">{{ format_rupiah(summary.net) }}</div>
+  </section>
+</div>
+
+<div class="grid-two mt16 top-align">
+  <section class="card">
+    <div class="section-head">
+      <div>
+        <div class="eyebrow">📅 Ritme harian</div>
+        <h2>Rekap harian</h2>
+      </div>
+      <span class="soft-pill">90 hari max</span>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Tanggal</th><th>Masuk</th><th>Keluar</th><th>Net</th><th>Jumlah trx</th></tr>
+        </thead>
+        <tbody>
+          {% for day in rollup %}
+          <tr>
+            <td>{{ day.day }}</td>
+            <td class="income">{{ format_rupiah(day.income) }}</td>
+            <td class="expense">{{ format_rupiah(-day.expense) }}</td>
+            <td>{{ format_rupiah(day.net) }}</td>
+            <td>{{ day.count }}</td>
+          </tr>
+          {% else %}
+          <tr><td colspan="5"><div class="empty-state">🫥 Belum ada data rekap.</div></td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="section-head">
+      <div>
+        <div class="eyebrow">🧾 Preview export</div>
+        <h2>Transaksi terfilter</h2>
+      </div>
+      <span class="soft-pill">{{ pagination.total_items }} data</span>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Tanggal</th><th>Deskripsi</th><th>Nominal</th></tr>
+        </thead>
+        <tbody>
+          {% for row in rows %}
+          <tr>
+            <td>{{ format_datetime(row.transaction_at) }}</td>
+            <td>{{ row.description }}</td>
+            <td class="{{ 'income' if row.amount >= 0 else 'expense' }}">{{ format_rupiah(row.amount) }}</td>
+          </tr>
+          {% else %}
+          <tr><td colspan="3"><div class="empty-state">📭 Belum ada data untuk ditampilkan.</div></td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    {% if pagination.total_pages > 1 %}
+    <div class="pagination">
+      {% if pagination.has_prev %}
+        <a class="btn btn-small" href="{{ url_for('main.reports', start=filters.start, end=filters.end, type=filters.type, per_page=filters.per_page, page=pagination.prev_page) }}">← Sebelumnya</a>
+      {% endif %}
+      <span class="muted">Halaman {{ pagination.page }} / {{ pagination.total_pages }}</span>
+      {% if pagination.has_next %}
+        <a class="btn btn-small" href="{{ url_for('main.reports', start=filters.start, end=filters.end, type=filters.type, per_page=filters.per_page, page=pagination.next_page) }}">Berikutnya →</a>
+      {% endif %}
+    </div>
+    {% endif %}
+  </section>
+</div>
+{% endblock %}

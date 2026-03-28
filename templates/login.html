@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Login - {{ config.APP_NAME }}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  {% if config.TURNSTILE_ENABLED and config.TURNSTILE_SITE_KEY %}
+  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+  {% endif %}
+</head>
+<body class="login-body">
+  <div class="page-orb orb-mint"></div>
+  <div class="page-orb orb-coral"></div>
+
+  <div class="login-layout">
+    <section class="login-showcase">
+      <div class="eyebrow">💫 UI baru, ritme baru</div>
+      <h1>{{ config.APP_NAME }}</h1>
+      <p class="login-copy">Catat pemasukan, pengeluaran, dan obrolan bot dengan tampilan yang lebih hangat, rapi, dan cepat dipindai.</p>
+
+      <div class="chip-cloud">
+        <span class="soft-pill">💸 Cashflow snapshot</span>
+        <span class="soft-pill">📊 Rekap harian</span>
+        <span class="soft-pill">🔐 Password via chat</span>
+      </div>
+
+      <div class="feature-grid">
+        <article class="feature-card">
+          <div class="feature-emoji">📲</div>
+          <div>
+            <h2>Aktifkan akun dulu</h2>
+            <p>Kirim chat pertama ke webhook agar nomor WhatsApp kamu terdaftar otomatis.</p>
+          </div>
+        </article>
+        <article class="feature-card">
+          <div class="feature-emoji">🪄</div>
+          <div>
+            <h2>Password langsung lewat chat</h2>
+            <p>Begitu pesan pertama masuk, akun dibuat otomatis dan password sementara dikirim balik lewat WhatsApp.</p>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="login-card">
+      <div class="logo-circle">WF</div>
+      <h2>Masuk ke dashboard</h2>
+      <p class="muted center">Login pakai nomor WhatsApp dan password sementara yang dikirim bot, lalu ganti di Settings.</p>
+
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <div class="flash-stack">
+            {% for category, message in messages %}
+              <div class="flash {{ category }}">{{ message }}</div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
+
+      <form method="post" class="stack-form">
+        <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+        <label>Nomor WhatsApp
+          <input type="text" name="phone" placeholder="6281234567890" required>
+        </label>
+        <label>Password
+          <input type="password" name="password" placeholder="Masukkan password akun" required>
+        </label>
+        {% if config.TURNSTILE_ENABLED and config.TURNSTILE_SITE_KEY %}
+        <div class="turnstile-wrap">
+          <div
+            class="cf-turnstile"
+            data-sitekey="{{ config.TURNSTILE_SITE_KEY }}"
+            data-theme="light"
+            data-size="flexible"></div>
+        </div>
+        {% endif %}
+        <button type="submit" class="btn btn-primary">Masuk ✨</button>
+      </form>
+
+      <div class="login-help">
+        {% if twilio_sandbox_join_url %}
+        <div class="btn-row mt16">
+          <a class="btn btn-primary" href="{{ twilio_sandbox_join_url }}" target="_blank" rel="noopener">🧪 Gabung Sandbox WhatsApp</a>
+          <a class="btn btn-secondary" href="{{ twilio_sandbox_start_url }}" target="_blank" rel="noopener">👋 Kirim "{{ config.TWILIO_SANDBOX_START_TEXT }}"</a>
+        </div>
+        <p><strong>Mode gratis untuk testing:</strong> klik <em>Gabung Sandbox WhatsApp</em> dulu. Setelah WhatsApp membalas konfirmasi join, kirim <code>{{ config.TWILIO_SANDBOX_START_TEXT }}</code> untuk membuat akun otomatis.</p>
+        <p><strong>Auto-reply:</strong> setelah sandbox aktif dan webhook Twilio diarahkan ke app ini, semua pesan user akan diproses dan dibalas otomatis.</p>
+        {% elif twilio_sandbox_enabled %}
+        <p><strong>Twilio Sandbox aktif sebagian:</strong> nomor sandbox sudah siap, tapi <code>TWILIO_SANDBOX_JOIN_CODE</code> di konfigurasi masih kosong.</p>
+        <p>Isi <code>TWILIO_SANDBOX_JOIN_CODE</code> dan <code>TWILIO_AUTH_TOKEN</code> dari dashboard Twilio, lalu refresh halaman ini untuk menampilkan tombol join sandbox.</p>
+        {% elif whatsapp_chat_url %}
+        <div class="btn-row mt16">
+          <a class="btn btn-primary" href="{{ whatsapp_chat_url }}" target="_blank" rel="noopener">💬 Buat akun via WhatsApp</a>
+        </div>
+        <p><strong>Belum punya akun?</strong> Klik tombol di atas. Chat akan terbuka dengan pesan siap kirim, lalu tekan <strong>Send</strong> sekali untuk membuat akun otomatis.</p>
+        {% else %}
+        <p><strong>Belum aktif?</strong> Isi nomor bot WhatsApp biasa, atau aktifkan mode <em>Twilio Sandbox</em> untuk testing gratis.</p>
+        {% endif %}
+        <p><strong>Lupa password?</strong> Kirim <code>lupa password</code> ke bot untuk minta password baru.</p>
+      </div>
+    </section>
+  </div>
+</body>
+</html>
