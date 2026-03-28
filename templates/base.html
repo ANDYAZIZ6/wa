@@ -7,81 +7,42 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-  <div class="page-orb orb-mint"></div>
-  <div class="page-orb orb-coral"></div>
-  <div class="page-orb orb-gold"></div>
+  <div class="mobile-app">
+    <header class="topbar-simple">
+      <h1>{% block page_title %}{{ config.APP_NAME }}{% endblock %}</h1>
+      {% block subtitle %}{% endblock %}
+    </header>
 
-  <div class="shell">
-    <aside class="sidebar">
-      <div class="brand-panel">
-        <div class="brand-mark">💬</div>
-        <div>
-          <div class="brand-title">{{ config.APP_NAME }}</div>
-          <p class="brand-copy">Dompet harian, rekap cepat, dan jejak WhatsApp dalam satu cockpit.</p>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="flash-stack">
+          {% for category, message in messages %}
+            <div class="flash {{ category }}">{{ message }}</div>
+          {% endfor %}
         </div>
-      </div>
-
-      <nav class="nav-menu">
-        {% if g.user %}
-          <a href="{{ url_for('main.dashboard') }}" class="nav-link {% if request.endpoint == 'main.dashboard' %}active{% endif %}"><span>📊</span>Dashboard</a>
-          <a href="{{ url_for('main.transactions') }}" class="nav-link {% if request.endpoint and (request.endpoint.startswith('main.transactions') or request.endpoint == 'main.edit_transaction') %}active{% endif %}"><span>💸</span>Transaksi</a>
-          <a href="{{ url_for('main.reports') }}" class="nav-link {% if request.endpoint == 'main.reports' %}active{% endif %}"><span>📈</span>Laporan</a>
-          {% if config.ENABLE_SIMULATOR %}
-            <a href="{{ url_for('whatsapp.simulator') }}" class="nav-link {% if request.endpoint == 'whatsapp.simulator' %}active{% endif %}"><span>🧪</span>Simulator WA</a>
-          {% endif %}
-          <a href="{{ url_for('main.settings') }}" class="nav-link {% if request.endpoint == 'main.settings' %}active{% endif %}"><span>⚙️</span>Settings</a>
-          <a href="{{ url_for('auth.logout') }}" class="nav-link"><span>🚪</span>Logout</a>
-        {% else %}
-          <a href="{{ url_for('auth.login') }}" class="nav-link active"><span>🔐</span>Login</a>
-        {% endif %}
-      </nav>
-
-      {% if g.user %}
-      <div class="sidebar-footer">
-        <div class="info-tile">
-          <span class="small-label">Nomor Aktif</span>
-          <strong>{{ g.user.phone }}</strong>
-        </div>
-        <div class="info-row">
-          <span>Plan</span>
-          <span class="badge">{{ g.user.plan }}</span>
-        </div>
-      </div>
       {% endif %}
-    </aside>
+    {% endwith %}
 
-    <main class="content">
-      <header class="topbar">
-        <div>
-          <div class="eyebrow">✨ Financial rhythm, minus drama</div>
-          <h1>{% block page_title %}{{ config.APP_NAME }}{% endblock %}</h1>
-          {% block subtitle %}{% endblock %}
-        </div>
-
-        {% if g.user %}
-        <div class="topbar-card">
-          <span class="small-label">Akun aktif</span>
-          <strong>{{ g.user.phone }}</strong>
-          <div class="badge-row">
-            <span class="soft-pill">📱 WhatsApp linked</span>
-            <span class="soft-pill">🛡️ Session secured</span>
-          </div>
-        </div>
-        {% endif %}
-      </header>
-
-      {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-          <div class="flash-stack">
-            {% for category, message in messages %}
-              <div class="flash {{ category }}">{{ message }}</div>
-            {% endfor %}
-          </div>
-        {% endif %}
-      {% endwith %}
-
+    <main class="page-content">
       {% block content %}{% endblock %}
     </main>
+
+    {% if g.user %}
+    <nav class="bottom-nav">
+      <a href="{{ url_for('main.dashboard') }}" class="bottom-link {% if request.endpoint == 'main.dashboard' %}active{% endif %}">
+        <span>🏠</span>
+        <small>Beranda</small>
+      </a>
+      <a href="{{ url_for('main.transactions') }}" class="bottom-link {% if request.endpoint and (request.endpoint.startswith('main.transactions') or request.endpoint == 'main.edit_transaction') %}active{% endif %}">
+        <span>📋</span>
+        <small>Transaksi</small>
+      </a>
+      <a href="{{ url_for('main.settings') }}" class="bottom-link {% if request.endpoint == 'main.settings' %}active{% endif %}">
+        <span>⚙️</span>
+        <small>Pengaturan</small>
+      </a>
+    </nav>
+    {% endif %}
   </div>
 </body>
 </html>

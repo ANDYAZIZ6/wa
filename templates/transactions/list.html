@@ -1,128 +1,63 @@
 {% extends 'base.html' %}
 {% block title %}Transaksi - {{ config.APP_NAME }}{% endblock %}
-{% block page_title %}💸 Transaksi{% endblock %}
-{% block subtitle %}<p class="muted">Tambah, rapikan, dan saring transaksi tanpa ribet.</p>{% endblock %}
+{% block page_title %}Riwayat Transaksi{% endblock %}
 {% block content %}
-<div class="grid-two top-align">
-  <section class="card">
-    <div class="section-head">
-      <div>
-        <div class="eyebrow">✍️ Input cepat</div>
-        <h2>Tambah transaksi</h2>
-      </div>
-      <span class="soft-pill">Contoh: +2jt bonus</span>
-    </div>
-    <form method="post" class="stack-form">
-      <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
-      <label>Nominal
-        <input type="text" name="amount" placeholder="Contoh: 10k atau +2jt" required>
-      </label>
-      <label>Deskripsi
-        <input type="text" name="description" placeholder="Mis. makan siang, freelance">
-      </label>
-      <label>Kategori
-        <input type="text" name="category" placeholder="Opsional">
-      </label>
-      <input type="hidden" name="source" value="web">
-      <button type="submit" class="btn btn-primary">Simpan transaksi ✅</button>
-    </form>
-  </section>
+<section class="card card-balance">
+  <div>💰 Saldo Total</div>
+  <div class="balance-number">{{ format_rupiah(balance) }}</div>
+  <p class="muted">{{ pagination.total_items }} transaksi • Semua waktu</p>
+</section>
 
-  <section class="card">
-    <div class="section-head">
-      <div>
-        <div class="eyebrow">🧭 Fokuskan data</div>
-        <h2>Filter transaksi</h2>
-      </div>
-      <span class="soft-pill">Cari lebih cepat</span>
+<section class="card">
+  <form method="post" class="stack-form">
+    <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+    <input type="hidden" name="source" value="web">
+    <label>Nominal<input type="text" name="amount" placeholder="Contoh: +3jt atau 20k" required></label>
+    <label>Deskripsi<input type="text" name="description" placeholder="Contoh: makan / freelance"></label>
+    <button type="submit" class="btn btn-primary">Tambah Transaksi</button>
+  </form>
+</section>
+
+<section class="card">
+  <div class="row-between"><strong>Menampilkan data: daily</strong><span class="muted">{{ pagination.total_items }} data</span></div>
+</section>
+
+<div class="tx-list">
+  {% for row in rows %}
+  <article class="tx-item">
+    <div>
+      <h3>{{ row.description }}</h3>
+      <p class="muted">{{ format_datetime(row.transaction_at) }}</p>
     </div>
-    <form method="get" class="stack-form compact-form">
-      <label>Cari deskripsi
-        <input type="text" name="q" value="{{ filters.q }}" placeholder="Cari...">
-      </label>
-      <label>Jenis
-        <select name="type">
-          <option value="">Semua</option>
-          <option value="income" {% if filters.type == 'income' %}selected{% endif %}>Income</option>
-          <option value="expense" {% if filters.type == 'expense' %}selected{% endif %}>Expense</option>
-        </select>
-      </label>
-      <label>Dari tanggal
-        <input type="date" name="start" value="{{ filters.start }}">
-      </label>
-      <label>Sampai tanggal
-        <input type="date" name="end" value="{{ filters.end }}">
-      </label>
-      <label>Per halaman
-        <select name="per_page">
-          {% for size in [10, 25, 50, 100] %}
-            <option value="{{ size }}" {% if filters.per_page == size %}selected{% endif %}>{{ size }}</option>
-          {% endfor %}
-        </select>
-      </label>
-      <div class="btn-row">
-        <button type="submit" class="btn">Terapkan</button>
-        <a href="{{ url_for('main.transactions') }}" class="btn btn-ghost">Reset</a>
+    <div class="tx-right">
+      <div class="tx-amount {{ 'income' if row.amount >= 0 else 'expense' }}">{{ '+' if row.amount >= 0 else '-' }}{{ format_rupiah(row.amount|abs) }}</div>
+      <div class="tx-actions">
+        {% if g.user.plan in ['STARTER', 'PREMIUM', 'PRO'] %}
+          <a href="{{ url_for('main.edit_transaction', tx_id=row.id) }}">✏️</a>
+          <form method="post" action="{{ url_for('main.delete_transaction', tx_id=row.id) }}" onsubmit="return confirm('Hapus transaksi ini?')">
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+            <button type="submit">🗑️</button>
+          </form>
+        {% else %}
+          <span class="muted small">Upgrade untuk edit</span>
+        {% endif %}
       </div>
-    </form>
-  </section>
+    </div>
+  </article>
+  {% else %}
+  <div class="empty-state">Belum ada transaksi.</div>
+  {% endfor %}
 </div>
 
-<section class="card mt16">
-  <div class="section-head">
-    <div>
-      <div class="eyebrow">📚 Ledger view</div>
-      <h2>Daftar transaksi</h2>
-    </div>
-    <span class="soft-pill">🧾 {{ pagination.total_items }} data</span>
-  </div>
-  <div class="table-wrap">
-    <table>
-      <thead>
-        <tr>
-          <th>Tanggal</th>
-          <th>Deskripsi</th>
-          <th>Kategori</th>
-          <th>Sumber</th>
-          <th>Nominal</th>
-          <th>Aksi</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for row in rows %}
-          <tr>
-            <td>{{ format_datetime(row.transaction_at) }}</td>
-            <td>{{ row.description }}</td>
-            <td>{{ row.category or '-' }}</td>
-            <td><span class="badge light">{{ '💬 ' ~ row.source if row.source == 'whatsapp' else '🖥️ ' ~ row.source }}</span></td>
-            <td class="{{ 'income' if row.amount >= 0 else 'expense' }}">{{ format_rupiah(row.amount) }}</td>
-            <td>
-              <div class="btn-row nowrap">
-                <a class="btn btn-small" href="{{ url_for('main.edit_transaction', tx_id=row.id) }}">Edit</a>
-                <form method="post" action="{{ url_for('main.delete_transaction', tx_id=row.id) }}" onsubmit="return confirm('Hapus transaksi ini?')">
-                  <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
-                  <button type="submit" class="btn btn-danger btn-small">Hapus</button>
-                </form>
-              </div>
-            </td>
-          </tr>
-        {% else %}
-          <tr><td colspan="6"><div class="empty-state">🫥 Belum ada transaksi untuk filter ini.</div></td></tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
-
-  {% if pagination.total_pages > 1 %}
-  <div class="pagination">
-    {% if pagination.has_prev %}
-      <a class="btn btn-small" href="{{ url_for('main.transactions', q=filters.q, type=filters.type, start=filters.start, end=filters.end, per_page=filters.per_page, page=pagination.prev_page) }}">← Sebelumnya</a>
-    {% endif %}
-    <span class="muted">Halaman {{ pagination.page }} / {{ pagination.total_pages }}</span>
-    {% if pagination.has_next %}
-      <a class="btn btn-small" href="{{ url_for('main.transactions', q=filters.q, type=filters.type, start=filters.start, end=filters.end, per_page=filters.per_page, page=pagination.next_page) }}">Berikutnya →</a>
-    {% endif %}
-  </div>
+{% if pagination.total_pages > 1 %}
+<div class="pagination">
+  {% if pagination.has_prev %}
+    <a class="btn" href="{{ url_for('main.transactions', q=filters.q, type=filters.type, start=filters.start, end=filters.end, per_page=filters.per_page, page=pagination.prev_page) }}">← Sebelumnya</a>
   {% endif %}
-</section>
+  <span class="muted">{{ pagination.page }}/{{ pagination.total_pages }}</span>
+  {% if pagination.has_next %}
+    <a class="btn" href="{{ url_for('main.transactions', q=filters.q, type=filters.type, start=filters.start, end=filters.end, per_page=filters.per_page, page=pagination.next_page) }}">Berikutnya →</a>
+  {% endif %}
+</div>
+{% endif %}
 {% endblock %}

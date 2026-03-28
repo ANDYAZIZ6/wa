@@ -14,6 +14,8 @@ COMMAND_ALIASES = {
     "mingguan": {"mingguan", "minggu", "weekly"},
     "bulanan": {"bulanan", "bulan", "monthly"},
     "upgrade": {"upgrade", "paket", "langganan"},
+    "limit": {"limit", "kuota"},
+    "laporan": {"laporan", "riwayat"},
     "reset": {"reset saldo", "reset"},
     "forgot_password": {"lupa password", "reset password"},
 }
@@ -25,28 +27,36 @@ class ParsedLine:
     command: str | None = None
     amount: int | None = None
     description: str | None = None
+    invalid_token: str | None = None
     raw: str = ""
 
 
 HELP_TEXT = (
     "📖 Panduan Catat WA\n\n"
     "💰 Set Saldo Awal:\n"
-    "* saldo awal 1000000\n"
-    "* saldo awal 500rb\n\n"
+    "* 'saldo awal 1000000' → Set saldo awal 1 juta\n"
+    "* 'saldo awal 500rb' → Set saldo awal 500 ribu\n\n"
     "Format pencatatan:\n"
-    "10k jajan kopi\n"
+    "10k Jajan kopi (otomatis pengeluaran)\n"
     "+5jt gaji freelance\n"
     "-20000 makan siang resto\n"
-    "+3 juta freelance\n\n"
+    "-15rb bensin pertamina\n\n"
+    "Tips:\n"
+    "* Bisa multi-baris dalam 1 chat\n"
+    "* + untuk pemasukan, - untuk pengeluaran\n"
+    "* Nominal bisa pakai k/rb (15k = 15.000)\n"
+    "* Kirim foto struk untuk auto-catat\n\n"
     "Perintah:\n"
-    "* saldo\n"
-    "* rekap / harian\n"
-    "* mingguan\n"
-    "* bulanan\n"
-    "* upgrade\n"
-    "* lupa password\n"
-    "* reset saldo\n"
-    "* bantuan"
+    "* 'saldo' : Cek saldo total\n"
+    "* 'rekap' atau 'harian' : Rekap hari ini\n"
+    "* 'mingguan' atau 'minggu':Rekap 7 hari terakhir\n"
+    "* 'bulanan' atau 'bulan' : Rekap 30 hari terakhir\n"
+    "* 'limit' atau 'kuota' : Cek sisa kuota bulan ini\n"
+    "* 'upgrade' : Lihat paket premium\n"
+    "* 'laporan' : Riwayat transaksi terbaru\n"
+    "* 'lupa password' : Reset password\n"
+    "* 'reset saldo' : Mulai lembaran baru (saldo jadi 0)\n"
+    "* 'bantuan' : Panduan ini"
 )
 
 
@@ -81,7 +91,10 @@ def parse_line(line: str) -> ParsedLine:
     for token, description_text in candidates:
         amount = parse_amount(token)
         if amount is not None:
+            compact = token.strip().replace(" ", "")
+            if compact and compact[0].isdigit():
+                amount *= -1
             description = description_text.strip() or "Tanpa deskripsi"
             return ParsedLine(kind="transaction", amount=amount, description=description, raw=raw)
 
-    return ParsedLine(kind="unknown", raw=raw)
+    return ParsedLine(kind="unknown", invalid_token=parts[0], raw=raw)

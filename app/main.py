@@ -11,6 +11,7 @@ from app.utils import app_now, build_csv, build_pagination, format_datetime, for
 
 
 main_bp = Blueprint("main", __name__)
+EDIT_DELETE_PLANS = {"STARTER", "PREMIUM", "PRO"}
 
 
 @main_bp.app_context_processor
@@ -46,6 +47,8 @@ def dashboard():
     today = db.summarize(g.user["id"], days=1)
     week = db.summarize(g.user["id"], days=7)
     month = db.summarize(g.user["id"], days=30)
+    all_time = db.summarize(g.user["id"])
+    today_count = db.count_transactions(user_id=g.user["id"], start_date=app_now().date().isoformat(), end_date=app_now().date().isoformat())
     recent_transactions = db.list_transactions(user_id=g.user["id"], limit=8)
     recent_messages = db.list_messages(g.user["id"], limit=8)
     return render_template(
@@ -54,6 +57,8 @@ def dashboard():
         today=today,
         week=week,
         month=month,
+        all_time=all_time,
+        today_count=today_count,
         recent_transactions=recent_transactions,
         recent_messages=recent_messages,
     )
@@ -104,8 +109,10 @@ def transactions():
         limit=per_page,
         offset=pagination["offset"],
     )
+    balance = db.get_balance(g.user["id"])
     return render_template(
         "transactions/list.html",
+        balance=balance,
         rows=rows,
         filters={"q": search, "type": tx_type or "", "start": start_date or "", "end": end_date or "", "per_page": per_page},
         pagination=pagination,
@@ -115,6 +122,10 @@ def transactions():
 @main_bp.route("/transactions/<int:tx_id>/edit", methods=["GET", "POST"])
 @login_required
 def edit_transaction(tx_id: int):
+    if str(g.user.get("plan") or "FREE").upper() not in EDIT_DELETE_PLANS:
+        flash("Fitur edit transaksi khusus paket STARTER/PREMIUM/PRO.", "error")
+        return redirect(url_for("main.transactions"))
+
     row = db.get_transaction(tx_id)
     if not row or int(row["user_id"]) != int(g.user["id"]):
         flash("Transaksi tidak ditemukan.", "error")
@@ -138,6 +149,10 @@ def edit_transaction(tx_id: int):
 @main_bp.route("/transactions/<int:tx_id>/delete", methods=["POST"])
 @login_required
 def delete_transaction(tx_id: int):
+    if str(g.user.get("plan") or "FREE").upper() not in EDIT_DELETE_PLANS:
+        flash("Fitur hapus transaksi khusus paket STARTER/PREMIUM/PRO.", "error")
+        return redirect(url_for("main.transactions"))
+
     row = db.get_transaction(tx_id)
     if row and int(row["user_id"]) == int(g.user["id"]):
         db.delete_transaction(tx_id)
