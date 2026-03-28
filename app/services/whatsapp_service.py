@@ -16,21 +16,21 @@ from app.utils import format_chat_date, format_rupiah, generate_temp_password, p
 PLAN_TEXT = (
     "📦 Paket Langganan Catat Uang\n\n"
     "🆓 FREE (Gratis)\n"
-    "* 10 teks / bulan\n"
-    "* 3 struk / bulan\n\n"
-    "✨ LITE - Rp 9.000 / bulan\n"
-    "* 200 teks / bulan\n"
-    "* 20 struk / bulan\n\n"
-    "⭐ STARTER - Rp 19.000 / bulan\n"
-    "* 450 teks / bulan\n"
-    "* 90 struk / bulan\n"
+    "* 10 teks/bulan\n"
+    "* 3 struk/bulan\n\n"
+    "✨ LITE - Rp 9.000/bulan\n"
+    "* 200 teks/bulan\n"
+    "* 20 struk/bulan\n\n"
+    "⭐ STARTER - Rp 19.000/bulan\n"
+    "* 450 teks/bulan\n"
+    "* 90 struk/bulan\n"
     "* Edit/delete transaksi\n\n"
-    "💎 PREMIUM - Rp 39.000 / bulan\n"
-    "* 1.200 teks / bulan\n"
-    "* 250 struk / bulan\n"
+    "💎 PREMIUM - Rp 39.000/bulan\n"
+    "* 1.200 teks/bulan\n"
+    "* 250 struk/bulan\n"
     "* Edit/delete transaksi\n"
     "* Export CSV\n\n"
-    "🚀 PRO - Rp 89.000 / bulan\n"
+    "🚀 PRO - Rp 89.000/bulan\n"
     "* Unlimited semua\n"
     "* Export CSV\n"
     "* Priority support\n\n"
@@ -43,6 +43,9 @@ UPGRADE_PLANS = {
     "premium": "PREMIUM",
     "pro": "PRO",
 }
+
+PREMIUM_PLANS = {"STARTER", "PREMIUM", "PRO"}
+FREE_TX_LIMIT = 20
 
 
 @dataclass
@@ -155,6 +158,7 @@ def process_incoming(incoming: IncomingMessage, *, base_url: str, default_plan: 
         return ProcessResult(user_id=user_id, reply_text=welcome_text, created_user=True, temporary_password=temp_password)
 
     user_id = int(user["id"])
+    user_plan = str(user.get("plan") or "FREE").upper()
     logged = db.log_message(
         user_id=user_id,
         provider=incoming.provider,
@@ -168,7 +172,9 @@ def process_incoming(incoming: IncomingMessage, *, base_url: str, default_plan: 
         return ProcessResult(user_id=user_id, reply_text="Pesan duplikat diabaikan.", duplicate=True)
 
     replies: list[str] = []
-    for raw_line in [line.strip() for line in incoming.text.splitlines() if line.strip()]:
+    line_errors: list[str] = []
+    lines = [line.strip() for line in incoming.text.splitlines() if line.strip()]
+    for idx, raw_line in enumerate(lines, start=1):
         special_reply = maybe_handle_special_line(user_id, raw_line)
         if special_reply is not None:
             replies.append(special_reply)
@@ -178,6 +184,14 @@ def process_incoming(incoming: IncomingMessage, *, base_url: str, default_plan: 
         if parsed.kind == "command":
             replies.append(_handle_command(user_id, parsed.command or "", base_url=base_url))
         elif parsed.kind == "transaction":
+            if user_plan not in PREMIUM_PLANS:
+                existing_total = db.count_transactions(user_id=user_id)
+                if existing_total >= FREE_TX_LIMIT:
+                    replies.append(
+                        "🚫 Limit free habis (20 transaksi)\n"
+                        "Upgrade ke PREMIUM untuk lanjut 😄"
+                    )
+                    continue
             tx_id = db.create_transaction(
                 user_id=user_id,
                 amount=int(parsed.amount or 0),
@@ -197,7 +211,10 @@ def process_incoming(incoming: IncomingMessage, *, base_url: str, default_plan: 
             if len(raw_line.split()) == 1:
                 replies.append(_help_reply(base_url))
             else:
-                replies.append(_invalid_format_reply())
+                line_errors.append(f"❌ Baris {idx}: Nominal tidak valid: {parsed.invalid_token or raw_line.split()[0]}")
+
+    if line_errors:
+        replies.append("\n".join(line_errors) + "\n\n" + _invalid_format_reply())
 
     reply_text = "\n\n".join(replies).strip() or _help_reply(base_url)
     db.log_message(
@@ -220,15 +237,18 @@ def _invalid_format_reply() -> str:
     return (
         "❌ Format tidak valid\n\n"
         "Contoh yang benar:\n"
-        "+20000 makan\n"
-        "-15000 bensin\n"
-        "20k kopi\n"
-        "+3 juta freelance\n\n"
+        "+ 20000 makan [catatan]\n"
+        "- 15000 bensin\n"
+        "20k kopi\n\n"
+        "atau kirim 1 foto struk (≤1 MB)\n\n"
         "Ketik 'bantuan' untuk panduan lengkap"
     )
 
 
 def _handle_command(user_id: int, command: str, *, base_url: str) -> str:
+    user = db.get_user_by_id(user_id) or {}
+    user_plan = str(user.get("plan") or "FREE").upper()
+
     if command == "hello":
         return (
             "Halo, siap bantu catat uang via WA.\n\n"
@@ -241,7 +261,6 @@ def _handle_command(user_id: int, command: str, *, base_url: str) -> str:
     if command == "bantuan":
         return _help_reply(base_url)
     if command == "saldo":
-        user = db.get_user_by_id(user_id) or {}
         summary = db.summarize(user_id)
         overview = db.get_transaction_overview(user_id)
         return (
@@ -279,6 +298,26 @@ def _handle_command(user_id: int, command: str, *, base_url: str) -> str:
         )
     if command == "upgrade":
         return PLAN_TEXT
+    if command == "laporan":
+        if user_plan not in PREMIUM_PLANS:
+            return "🔒 Fitur laporan lengkap khusus PREMIUM. Ketik: upgrade"
+        rows = db.list_transactions(user_id=user_id, limit=5)
+        if not rows:
+            return "📭 Belum ada transaksi"
+        lines = ["📊 Transaksi terakhir:"]
+        for row in rows:
+            amount = int(row["amount"])
+            sign = "+" if amount >= 0 else "-"
+            lines.append(f"{sign}{format_rupiah(abs(amount))} - {row['description']}")
+        return "\n".join(lines)
+    if command == "limit":
+        user = db.get_user_by_id(user_id) or {}
+        plan = user.get("plan", "FREE")
+        return (
+            "📦 Info Kuota Bulan Ini\n"
+            f"Plan aktif: {plan}\n"
+            "Untuk detail pemakaian real-time, fitur meter kuota akan segera hadir."
+        )
     if command == "forgot_password":
         new_password = generate_temp_password(8)
         db.update_user_password(user_id, generate_password_hash(new_password))

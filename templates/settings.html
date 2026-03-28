@@ -1,88 +1,47 @@
 {% extends 'base.html' %}
-{% block title %}Settings - {{ config.APP_NAME }}{% endblock %}
-{% block page_title %}⚙️ Settings{% endblock %}
-{% block subtitle %}<p class="muted">Kelola saldo awal, keamanan akun, dan jalur upgrade.</p>{% endblock %}
+{% block title %}Pengaturan - {{ config.APP_NAME }}{% endblock %}
+{% block page_title %}Pengaturan{% endblock %}
 {% block content %}
-<div class="grid-two top-align">
-  <section class="card">
-    <div class="section-head">
-      <div>
-        <div class="eyebrow">🪪 Profil akun</div>
-        <h2>Info utama</h2>
-      </div>
-      <span class="soft-pill">Secure session</span>
-    </div>
-    <div class="profile-box">
-      <div><span class="small-label">Nomor</span><div>{{ user.phone }}</div></div>
-      <div><span class="small-label">Plan</span><div><span class="badge">{{ user.plan }}</span></div></div>
-      <div><span class="small-label">Saldo awal</span><div>{{ format_rupiah(user.initial_balance) }}</div></div>
-      <div><span class="small-label">Dibuat</span><div>{{ format_datetime(user.created_at) }}</div></div>
-      <div><span class="small-label">Support</span><div>{{ config.SUPPORT_WHATSAPP or config.SUPPORT_CONTACT }}</div></div>
-    </div>
-  </section>
+<section class="card profile-card">
+  <h2>{{ user.name or user.phone }}</h2>
+  <p class="muted">{{ user.phone }}</p>
+  <p class="muted">Tier: <strong>{{ user.plan|lower }}</strong></p>
+</section>
 
-  <section class="card">
-    <div class="section-head">
-      <div>
-        <div class="eyebrow">🏁 Posisi awal</div>
-        <h2>Ubah saldo awal</h2>
-      </div>
-      <span class="soft-pill">Saldo dasar</span>
-    </div>
-    <form method="post" class="stack-form">
-      <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
-      <input type="hidden" name="form_name" value="balance">
-      <label>Saldo awal baru
-        <input type="text" name="initial_balance" placeholder="Contoh: 500k" required>
-      </label>
-      <button type="submit" class="btn btn-primary">Simpan saldo awal 💾</button>
-    </form>
-  </section>
-</div>
+{% if whatsapp_chat_url %}
+<section class="card inline-card">
+  <div>
+    <strong>WhatsApp Bot</strong>
+    <p class="muted">Chat untuk catat transaksi</p>
+  </div>
+  <a class="btn btn-primary" href="{{ whatsapp_chat_url }}" target="_blank" rel="noopener">Buka</a>
+</section>
+{% endif %}
 
-<div class="grid-two top-align mt16">
-  <section class="card">
-    <div class="section-head">
-      <div>
-        <div class="eyebrow">🔐 Keamanan akun</div>
-        <h2>Ganti password</h2>
-      </div>
-      <span class="soft-pill">Min. 10 karakter</span>
-    </div>
-    <form method="post" class="stack-form">
-      <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
-      <input type="hidden" name="form_name" value="password">
-      <label>Password saat ini
-        <input type="password" name="current_password" required>
-      </label>
-      <label>Password baru
-        <input type="password" name="new_password" minlength="10" required>
-      </label>
-      <label>Konfirmasi password baru
-        <input type="password" name="confirm_password" minlength="10" required>
-      </label>
-      <button type="submit" class="btn btn-primary">Update password 🛡️</button>
-    </form>
-  </section>
+<section class="card">
+  <h2>Saldo Awal</h2>
+  <p class="muted">Set saldo awal akun: {{ format_rupiah(user.initial_balance) }}</p>
+  <form method="post" class="stack-form">
+    <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+    <input type="hidden" name="form_name" value="balance">
+    <input type="text" name="initial_balance" placeholder="Contoh: 500k" required>
+    <button class="btn" type="submit">Simpan</button>
+  </form>
+</section>
 
-  <section class="card">
-    <div class="section-head">
-      <div>
-        <div class="eyebrow">🚀 Jalur upgrade</div>
-        <h2>Hubungi support</h2>
-      </div>
-      <span class="soft-pill">Manual review</span>
-    </div>
-    <p class="muted">Perubahan paket diproses oleh tim support agar billing dan kontrol akses tetap konsisten.</p>
-    <div class="notice-box">
-      <strong>📞 Kontak upgrade</strong>
-      <p>{{ config.SUPPORT_WHATSAPP or config.SUPPORT_CONTACT }}</p>
-      {% if whatsapp_chat_url %}
-      <div class="btn-row mt16">
-        <a class="btn btn-primary" href="{{ whatsapp_chat_url }}" target="_blank" rel="noopener">💬 Chat WhatsApp</a>
-      </div>
-      {% endif %}
-    </div>
-  </section>
-</div>
+<section class="card">
+  <h2>Ubah Password</h2>
+  <form method="post" class="stack-form">
+    <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+    <input type="hidden" name="form_name" value="password">
+    <input type="password" name="current_password" placeholder="Password saat ini" required>
+    <input type="password" name="new_password" placeholder="Password baru" minlength="10" required>
+    <input type="password" name="confirm_password" placeholder="Konfirmasi password" minlength="10" required>
+    <button class="btn" type="submit">Update Password</button>
+  </form>
+</section>
+
+<section class="card danger-card">
+  <a href="{{ url_for('auth.logout') }}" class="danger-link">Keluar dari akun</a>
+</section>
 {% endblock %}
